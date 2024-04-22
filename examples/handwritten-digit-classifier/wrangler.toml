@@ -1,0 +1,13 @@
+name = "fortran-handwritten-digit-classifier"
+main = "src/index.ts"
+compatibility_date = "2024-04-05"
+compatibility_flags = ["nodejs_compat"]
+account_id = "35a12ed87ac3233c64a7978aa97659fb"
+workers_dev = false
+route = "handwritten-digit-classifier.fortran.demos.cloudflare.com/*"
+
+rules = [
+  { type = "Text", globs = ["**/*.html"], fallthrough = true },
+  { type = "Text", globs = ["**/*.txt"], fallthrough = true },
+  { type = "Text", globs = ["**/*.css"], fallthrough = true },
+]

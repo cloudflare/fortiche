@@ -1,0 +1,6 @@
+[submodule "compiler/deps/emsdk"]
+	path = compiler/deps/emsdk
+	url = https://github.com/emscripten-core/emsdk.git
+[submodule "compiler/deps/llvm-project"]
+	path = compiler/deps/llvm-project
+	url = https://github.com/llvm/llvm-project

@@ -1,0 +1,55 @@
+diff --git a/deps/llvm-project/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h b/deps/llvm-project/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
+index b3fe52f4b..c3c7326da 100644
+--- a/deps/llvm-project/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
++++ b/deps/llvm-project/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
+@@ -146,7 +146,7 @@ constexpr TypeBuilderFunc getModel<void **>() {
+ template <>
+ constexpr TypeBuilderFunc getModel<long>() {
+   return [](mlir::MLIRContext *context) -> mlir::Type {
+-    return mlir::IntegerType::get(context, 8 * sizeof(long));
++    return mlir::IntegerType::get(context, 8 * 4);
+   };
+ }
+ template <>
+@@ -187,7 +187,7 @@ constexpr TypeBuilderFunc getModel<long long *>() {
+ template <>
+ constexpr TypeBuilderFunc getModel<unsigned long>() {
+   return [](mlir::MLIRContext *context) -> mlir::Type {
+-    return mlir::IntegerType::get(context, 8 * sizeof(unsigned long));
++    return mlir::IntegerType::get(context, 8 * 4);
+   };
+ }
+ template <>
+diff --git a/deps/llvm-project/flang/lib/Optimizer/CodeGen/CodeGen.cpp b/deps/llvm-project/flang/lib/Optimizer/CodeGen/CodeGen.cpp
+index ba5946415..2931753a8 100644
+--- a/deps/llvm-project/flang/lib/Optimizer/CodeGen/CodeGen.cpp
++++ b/deps/llvm-project/flang/lib/Optimizer/CodeGen/CodeGen.cpp
+@@ -1225,7 +1225,7 @@ getMalloc(fir::AllocMemOp op, mlir::ConversionPatternRewriter &rewriter) {
+     return mlir::SymbolRefAttr::get(userMalloc);
+   mlir::OpBuilder moduleBuilder(
+       op->getParentOfType<mlir::ModuleOp>().getBodyRegion());
+-  auto indexType = mlir::IntegerType::get(op.getContext(), 64);
++  auto indexType = mlir::IntegerType::get(op.getContext(), 32);
+   auto mallocDecl = moduleBuilder.create<mlir::LLVM::LLVMFuncOp>(
+       op.getLoc(), mallocName,
+       mlir::LLVM::LLVMFunctionType::get(getLlvmPtrType(op.getContext()),
+@@ -1281,6 +1281,7 @@ struct AllocMemOpConversion : public FIROpConversion<fir::AllocMemOp> {
+     mlir::Type heapTy = heap.getType();
+     mlir::Location loc = heap.getLoc();
+     auto ity = lowerTy().indexType();
++    auto i32ty = mlir::IntegerType::get(rewriter.getContext(), 32);
+     mlir::Type dataTy = fir::unwrapRefType(heapTy);
+     mlir::Type llvmObjectTy = convertObjectType(dataTy);
+     if (fir::isRecordWithTypeParameters(fir::unwrapSequenceType(dataTy)))
+@@ -1291,9 +1292,10 @@ struct AllocMemOpConversion : public FIROpConversion<fir::AllocMemOp> {
+     for (mlir::Value opnd : adaptor.getOperands())
+       size = rewriter.create<mlir::LLVM::MulOp>(
+           loc, ity, size, integerCast(loc, rewriter, ity, opnd));
++    auto size_i32 = integerCast(loc, rewriter, i32ty, size);
+     heap->setAttr("callee", getMalloc(heap, rewriter));
+     rewriter.replaceOpWithNewOp<mlir::LLVM::CallOp>(
+-        heap, ::getLlvmPtrType(heap.getContext()), size, heap->getAttrs());
++        heap, ::getLlvmPtrType(heap.getContext()), size_i32, heap->getAttrs());
+     return mlir::success();
+   }
+
